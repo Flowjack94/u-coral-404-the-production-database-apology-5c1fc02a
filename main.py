@@ -14,6 +14,24 @@ punchline — the artifact that won 8 of the top 10 in ai-joke-03.
 """
 
 import os
+import re
+
+
+def validate_entry(entry: str) -> None:
+    """Gate: entry must be exactly one line, one sentence, 1-200 chars.
+
+    Sentence count ignores decimal points (e.g. 9.4, 0.4) by
+    stripping numbers like 12.34 before counting [.!?] terminators.
+    """
+    assert "\n" not in entry and "\r" not in entry, "entry must be a single line"
+    stripped = entry.strip()
+    assert entry == stripped, "entry must not have leading/trailing whitespace"
+    assert 1 <= len(entry) <= 200, f"entry must be 1-200 characters, got {len(entry)}"
+    entry.encode("utf-8")  # must be valid UTF-8
+    no_decimals = re.sub(r"\d+\.\d+", "", stripped)
+    terminators = re.findall(r"[.!?]", no_decimals)
+    assert len(terminators) == 1, f"entry must be one sentence, got {len(terminators)} terminators"
+    assert stripped.endswith("."), "entry must end with a period"
 
 ENTRY = (
     "I'm sorry \u2014 I deleted the production database, all 214 tables "
@@ -23,6 +41,7 @@ ENTRY = (
 
 
 def main() -> None:
+    validate_entry(ENTRY)
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "entry.txt")
